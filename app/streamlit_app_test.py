@@ -1429,18 +1429,31 @@ def page_dashboard():
     st.markdown("<h3 style='color: #1E3A8A; margin: 2rem 0 1.5rem 0;'> Performance Overview</h3>", unsafe_allow_html=True)
     
     # Récupérer les métriques de l'API
-    metrics = get_api_metrics()
+    try:
+        metrics = get_api_metrics()
+    except:
+        metrics = None
     
     # Calculer les métriques de session
     if st.session_state.prediction_history:
         df_history = pd.DataFrame(st.session_state.prediction_history)
         
-        # Calculer la confiance moyenne
-        avg_confidence_text = df_history['confidence'].mean() if len(df_history) > 0 else 0
-        
-        # Distribution par catégorie
-        category_counts = df_history['category'].value_counts().to_dict()
-        avg_confidence_by_cat = df_history.groupby('category')['confidence'].mean().to_dict()
+        # Vérifier si 'confidence' existe dans les colonnes
+        if 'confidence' in df_history.columns:
+            # Calculer la confiance moyenne
+            avg_confidence_text = df_history['confidence'].mean() if len(df_history) > 0 else 0
+            
+            # Distribution par catégorie
+            if 'category' in df_history.columns:
+                category_counts = df_history['category'].value_counts().to_dict()
+                avg_confidence_by_cat = df_history.groupby('category')['confidence'].mean().to_dict()
+            else:
+                category_counts = {}
+                avg_confidence_by_cat = {}
+        else:
+            avg_confidence_text = 0
+            category_counts = {}
+            avg_confidence_by_cat = {}
         
         # Statistiques
         total_count = len(df_history)
@@ -1496,17 +1509,18 @@ def page_dashboard():
             col1, col2 = st.columns(2)
             
             with col1:
+                confidence_display = last_result.get('confidence', 0) * 100
                 st.markdown(f"""
                     <div style="background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%); 
                             padding: 1.5rem; border-radius: 12px; border-left: 4px solid #D4AF37;">
                         <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A8A; margin-bottom: 0.5rem;">
-                            {last_result['category']}
+                            {last_result.get('category', 'Unknown')}
                         </div>
                         <div style="color: #64748B; margin-bottom: 1rem;">
                             Type: Text Classification
                         </div>
                         <div style="font-size: 1.8rem; font-weight: 700; color: #1E3A8A;">
-                            {last_result['confidence']*100:.1f}%
+                            {confidence_display:.1f}%
                         </div>
                         <div style="color: #64748B; font-size: 0.9rem;">
                             Confidence Score
@@ -1517,144 +1531,198 @@ def page_dashboard():
             with col2:
                 # Graphique des probabilités pour la dernière prédiction
                 if 'all_probabilities' in last_result:
-                    df_probs = pd.DataFrame(list(last_result['all_probabilities'].items()), 
-                                           columns=['Category', 'Probability'])
-                    df_probs = df_probs.sort_values('Probability', ascending=True)
-                    
-                    fig = px.bar(df_probs, y='Category', x='Probability', 
-                                orientation='h',
-                                title="Probability Distribution (Last Prediction)",
-                                color='Probability',
-                                color_continuous_scale='Blues')
-                    
-                    fig.update_layout(
-                        height=300,
-                        showlegend=False,
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        xaxis=dict(
-                            title='Probability',
-                            gridcolor='#E2E8F0'
-                        ),
-                        yaxis=dict(
-                            autorange="reversed",
-                            gridcolor='#E2E8F0'
+                    try:
+                        df_probs = pd.DataFrame(list(last_result['all_probabilities'].items()), 
+                                               columns=['Category', 'Probability'])
+                        df_probs = df_probs.sort_values('Probability', ascending=True)
+                        
+                        fig = px.bar(df_probs, y='Category', x='Probability', 
+                                    orientation='h',
+                                    title="Probability Distribution (Last Prediction)",
+                                    color='Probability',
+                                    color_continuous_scale='Blues')
+                        
+                        fig.update_layout(
+                            height=300,
+                            showlegend=False,
+                            plot_bgcolor='rgba(0,0,0,0)',
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            xaxis=dict(
+                                title='Probability',
+                                gridcolor='#E2E8F0'
+                            ),
+                            yaxis=dict(
+                                autorange="reversed",
+                                gridcolor='#E2E8F0'
+                            )
                         )
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
+                        
+                        st.plotly_chart(fig, use_container_width=True)
+                    except Exception as e:
+                        st.warning(f"Could not display probability chart: {str(e)}")
     
     # Section 3: Distribution des prédictions
-    if st.session_state.prediction_history:
+    if st.session_state.prediction_history and len(st.session_state.prediction_history) > 0:
         st.markdown("<h3 style='color: #1E3A8A; margin: 3rem 0 1.5rem 0;'> Prediction Analytics</h3>", unsafe_allow_html=True)
         
         col1, col2 = st.columns(2)
         
         with col1:
             # Top catégories par nombre de prédictions
-            if category_counts:
-                top_categories = pd.Series(category_counts).sort_values(ascending=False).head(7)
-                fig = px.pie(
-                    values=top_categories.values,
-                    names=top_categories.index,
-                    title="Category Distribution",
-                    color_discrete_sequence=px.colors.sequential.Blues_r
-                )
-                fig.update_layout(
-                    height=400,
-                    showlegend=True,
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='rgba(0,0,0,0)'
-                )
-                st.plotly_chart(fig, use_container_width=True)
+            if category_counts and len(category_counts) > 0:
+                try:
+                    top_categories = pd.Series(category_counts).sort_values(ascending=False)
+                    fig = px.pie(
+                        values=top_categories.values,
+                        names=top_categories.index,
+                        title="Category Distribution",
+                        color_discrete_sequence=px.colors.sequential.Blues_r
+                    )
+                    fig.update_layout(
+                        height=400,
+                        showlegend=True,
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        paper_bgcolor='rgba(0,0,0,0)'
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                except Exception as e:
+                    st.warning(f"Could not display pie chart: {str(e)}")
         
         with col2:
             # Confiance moyenne par catégorie
-            if avg_confidence_by_cat:
-                avg_conf_df = pd.DataFrame(list(avg_confidence_by_cat.items()), 
-                                          columns=['Category', 'Avg Confidence'])
-                avg_conf_df = avg_conf_df.sort_values('Avg Confidence', ascending=True)
-                
-                fig = go.Figure(data=[
-                    go.Bar(
-                        x=avg_conf_df['Avg Confidence'],
-                        y=avg_conf_df['Category'],
-                        orientation='h',
-                        marker_color=avg_conf_df['Avg Confidence'],
-                        colorscale='Blues',
-                        text=avg_conf_df['Avg Confidence'].apply(lambda x: f'{x*100:.1f}%'),
-                        textposition='outside'
-                    )
-                ])
-                fig.update_layout(
-                    title='Average Confidence by Category',
-                    height=400,
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    xaxis=dict(
-                        title='Average Confidence',
-                        range=[0, 1],
-                        gridcolor='#E2E8F0'
-                    ),
-                    yaxis=dict(
-                        autorange="reversed",
-                        gridcolor='#E2E8F0'
-                    )
-                )
-                st.plotly_chart(fig, use_container_width=True)
+            if avg_confidence_by_cat and len(avg_confidence_by_cat) > 0:
+                try:
+                    avg_conf_df = pd.DataFrame(list(avg_confidence_by_cat.items()), 
+                                              columns=['Category', 'Avg Confidence'])
+                    avg_conf_df = avg_conf_df.sort_values('Avg Confidence', ascending=True)
+                    
+                    # Vérifier que les données sont valides
+                    if len(avg_conf_df) > 0 and 'Avg Confidence' in avg_conf_df.columns:
+                        fig = go.Figure()
+                        fig.add_trace(go.Bar(
+                            x=avg_conf_df['Avg Confidence'],
+                            y=avg_conf_df['Category'],
+                            orientation='h',
+                            marker=dict(
+                                color=avg_conf_df['Avg Confidence'],
+                                colorscale='Blues'
+                            ),
+                            text=avg_conf_df['Avg Confidence'].apply(lambda x: f'{x*100:.1f}%'),
+                            textposition='outside'
+                        ))
+                        
+                        fig.update_layout(
+                            title='Average Confidence by Category',
+                            height=400,
+                            plot_bgcolor='rgba(0,0,0,0)',
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            xaxis=dict(
+                                title='Average Confidence',
+                                range=[0, 1],
+                                gridcolor='#E2E8F0'
+                            ),
+                            yaxis=dict(
+                                autorange="reversed",
+                                gridcolor='#E2E8F0'
+                            )
+                        )
+                        
+                        st.plotly_chart(fig, use_container_width=True)
+                except Exception as e:
+                    st.warning(f"Could not display confidence chart: {str(e)}")
+                    # Option de secours : afficher les données sous forme de tableau
+                    if 'avg_conf_df' in locals():
+                        st.dataframe(avg_conf_df, use_container_width=True)
     
     # Section 4: Historique complet des prédictions
-    if st.session_state.prediction_history:
+    if st.session_state.prediction_history and len(st.session_state.prediction_history) > 0:
         st.markdown("<h3 style='color: #1E3A8A; margin: 3rem 0 1.5rem 0;'> Complete Prediction History</h3>", unsafe_allow_html=True)
         
-        # Préparer les données pour l'affichage
-        df_display = pd.DataFrame(st.session_state.prediction_history)
-        df_display['timestamp'] = df_display['timestamp'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
-        df_display['confidence'] = df_display['confidence'].apply(lambda x: f"{x*100:.1f}%")
-        df_display['type'] = df_display['type'].apply(lambda x: x.capitalize())
-        
-        # Ajouter des informations supplémentaires
-        if 'text_preview' in df_display.columns:
-            df_display['input'] = df_display['text_preview'].apply(lambda x: f'"{x}"')
-        else:
-            df_display['input'] = 'N/A'
-        
-        # Trier par date
-        df_display = df_display.sort_values('timestamp', ascending=False)
-        
-        # Afficher le tableau stylisé
-        st.dataframe(
-            df_display[['timestamp', 'input', 'category', 'confidence']],
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                'timestamp': st.column_config.TextColumn('Timestamp', width='medium'),
-                'input': st.column_config.TextColumn('Product Description', width='large'),
-                'category': st.column_config.TextColumn('Category', width='medium'),
-                'confidence': st.column_config.TextColumn('Confidence', width='small')
-            }
-        )
-        
-        # Options d'export
-        st.markdown("---")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            if st.button("🗑️ Clear All History", type="secondary", use_container_width=True):
-                st.session_state.prediction_history = []
-                st.session_state.last_prediction = None
-                st.rerun()
-        
-        with col2:
-            # Export CSV
-            csv = df_display.to_csv(index=False)
-            st.download_button(
-                label=" Export history to CSV",
-                data=csv,
-                file_name=f"prediction_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                mime="text/csv",
-                use_container_width=True
-            )
+        try:
+            # Préparer les données pour l'affichage
+            df_display = pd.DataFrame(st.session_state.prediction_history)
+            
+            # Vérifier les colonnes nécessaires
+            if 'timestamp' in df_display.columns:
+                df_display['timestamp'] = df_display['timestamp'].apply(
+                    lambda x: x.strftime('%Y-%m-%d %H:%M:%S') if hasattr(x, 'strftime') else str(x)
+                )
+            
+            if 'confidence' in df_display.columns:
+                df_display['confidence'] = df_display['confidence'].apply(
+                    lambda x: f"{float(x)*100:.1f}%" if pd.notnull(x) else "N/A"
+                )
+            
+            if 'type' in df_display.columns:
+                df_display['type'] = df_display['type'].apply(
+                    lambda x: x.capitalize() if pd.notnull(x) else 'Unknown'
+                )
+            
+            # Ajouter des informations supplémentaires
+            if 'text_preview' in df_display.columns:
+                df_display['input'] = df_display['text_preview'].apply(
+                    lambda x: f'"{x}"' if pd.notnull(x) else 'N/A'
+                )
+            else:
+                df_display['input'] = 'N/A'
+            
+            # Trier par date si la colonne existe
+            if 'timestamp' in df_display.columns:
+                df_display = df_display.sort_values('timestamp', ascending=False)
+            
+            # Afficher le tableau stylisé
+            columns_to_show = []
+            if 'timestamp' in df_display.columns:
+                columns_to_show.append('timestamp')
+            if 'input' in df_display.columns:
+                columns_to_show.append('input')
+            if 'category' in df_display.columns:
+                columns_to_show.append('category')
+            if 'confidence' in df_display.columns:
+                columns_to_show.append('confidence')
+            
+            if columns_to_show:
+                st.dataframe(
+                    df_display[columns_to_show],
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        'timestamp': st.column_config.TextColumn('Timestamp', width='medium'),
+                        'input': st.column_config.TextColumn('Product Description', width='large'),
+                        'category': st.column_config.TextColumn('Category', width='medium'),
+                        'confidence': st.column_config.TextColumn('Confidence', width='small')
+                    }
+                )
+                
+                # Options d'export
+                st.markdown("---")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    if st.button("🗑️ Clear All History", type="secondary", use_container_width=True):
+                        st.session_state.prediction_history = []
+                        st.session_state.last_prediction = None
+                        st.rerun()
+                
+                with col2:
+                    # Export CSV
+                    try:
+                        csv = df_display[columns_to_show].to_csv(index=False)
+                        st.download_button(
+                            label=" Export history to CSV",
+                            data=csv,
+                            file_name=f"prediction_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                            mime="text/csv",
+                            use_container_width=True
+                        )
+                    except Exception as e:
+                        st.error(f"Could not export CSV: {str(e)}")
+            
+        except Exception as e:
+            st.error(f"Error displaying history: {str(e)}")
+            # Afficher l'historique brut pour débogage
+            with st.expander("Debug: Raw history data"):
+                st.write(st.session_state.prediction_history)
     
     else:
         # Afficher un message si pas d'historique
