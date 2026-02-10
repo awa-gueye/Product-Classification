@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - TF_CPP_MIN_LOG_LEVEL=3
+    volumes:
+      - ./api:/app
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
