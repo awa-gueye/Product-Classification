@@ -31,7 +31,7 @@ GOOGLE_DRIVE_IDS = {
     "tfidf_vectorizer.pkl": "1De4pUoj_IDdH3ZMYYQaTVFwwAgMo_N9y",
     "final_best_model.pkl": "1p0UXPEM5bQ2CjM6BS3YtYlxcAED6o6UA", 
     "label_encoders.pkl": "1O4EFUU6Qj_mtEb_wmBL6QjlLahe3l3yH",
-    "cnn_final.keras": "1RXL7knfjXtNk6Aa3HZZQjCEUDow0QUJ7"
+    #"cnn_final.keras": "1RXL7knfjXtNk6Aa3HZZQjCEUDow0QUJ7"
 }
 
 # CATÉGORIES CORRECTES (basées sur votre dataset)
@@ -110,14 +110,14 @@ class ModelLoader:
             self._analyze_label_encoder()
             
             # 4. Modèle CNN (image)
-            try:
-                import tensorflow as tf
-                from tensorflow import keras
-                self.image_model = self._download_model("cnn_final.keras", is_keras=True)
-                logger.info("✅ Modèle CNN chargé")
-            except ImportError:
-                logger.warning("⚠️ TensorFlow non installé - CNN désactivé")
-                self.image_model = None
+            #try:
+            #   import tensorflow as tf
+             #   from tensorflow import keras
+            #    self.image_model = self._download_model("cnn_final.keras", is_keras=True)
+             #   logger.info("✅ Modèle CNN chargé")
+            #except ImportError:
+            #    logger.warning("⚠️ TensorFlow non installé - CNN désactivé")
+            #    self.image_model = None
             
             # 5. Vérifier les capacités du modèle texte
             self._check_text_model_capabilities()
