@@ -911,18 +911,46 @@ def call_image_api(image_file):
         return None
 
 def call_text_api(text):
-    """Appeler API pour classification texte"""
+    """Appeler API pour classification texte avec gestion d'erreurs améliorée"""
     try:
         data = {"text": text}
         response = requests.post(f"{API_URL}/predict/text", json=data, timeout=30)
+        
+        # Vérifier le statut HTTP
         response.raise_for_status()
-        result = response.json()
-        # Ajouter le type de prédiction
-        if result and 'success' in result:
-            result['prediction_type'] = 'text'
-        return result
-    except requests.exceptions.RequestException as e:
-        st.error(f"❌ Classification Error: {e.response.json() if hasattr(e, 'response') else str(e)}")
+        
+        # Essayer de parser le JSON
+        try:
+            return response.json()
+        except ValueError as json_error:
+            st.error(f"❌ Réponse JSON invalide: {json_error}")
+            return None
+            
+    except requests.exceptions.Timeout:
+        st.error("⏱️ Timeout: Le serveur ne répond pas. Vérifiez que l'API est en ligne.")
+        return None
+        
+    except requests.exceptions.ConnectionError:
+        st.error("🔌 Erreur de connexion: Impossible de se connecter à l'API. Vérifiez l'URL.")
+        return None
+        
+    except requests.exceptions.HTTPError as http_err:
+        # Gestion sécurisée de la réponse HTTP
+        error_message = f"❌ Erreur HTTP {http_err.response.status_code}"
+        
+        try:
+            if http_err.response and http_err.response.text:
+                error_detail = http_err.response.json().get('detail', http_err.response.text)
+                error_message += f": {error_detail}"
+        except (ValueError, AttributeError):
+            if http_err.response and http_err.response.text:
+                error_message += f": {http_err.response.text[:100]}"
+        
+        st.error(error_message)
+        return None
+        
+    except Exception as e:
+        st.error(f"❌ Erreur inattendue: {str(e)}")
         return None
 
 def get_api_metrics():
