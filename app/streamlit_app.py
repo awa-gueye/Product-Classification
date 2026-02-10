@@ -1747,7 +1747,7 @@ def page_dashboard():
     
     # Section 3: Distribution des prédictions
     if st.session_state.prediction_history:
-        st.markdown("<h3 style='color: #1E3A8A; margin: 3rem 0 1.5rem 0;'>📊 Prediction Analytics</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color: #1E3A8A; margin: 3rem 0 1.5rem 0;'> Prediction Analytics</h3>", unsafe_allow_html=True)
         
         col1, col2 = st.columns(2)
         
@@ -1801,7 +1801,7 @@ def page_dashboard():
     
     # Section 4: Historique complet des prédictions
     if st.session_state.prediction_history:
-        st.markdown("<h3 style='color: #1E3A8A; margin: 3rem 0 1.5rem 0;'>📋 Complete Prediction History</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color: #1E3A8A; margin: 3rem 0 1.5rem 0;'> Complete Prediction History</h3>", unsafe_allow_html=True)
         
         # Préparer les données pour l'affichage
         df_display = pd.DataFrame(st.session_state.prediction_history)
