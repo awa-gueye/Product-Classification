@@ -13,10 +13,8 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from PIL import Image
-import requests
-import io
 from datetime import datetime
+import requests
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -46,36 +44,19 @@ CATEGORIES = [
     "Watches"
 ]
 
-# Images des catégories (Unsplash)
-CATEGORY_IMAGES = {
-    "Baby Care": "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&h=200&fit=crop",
-    "Beauty and Personal Care": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=300&h=200&fit=crop",
-    "Computers": "https://images.unsplash.com/photo-1547082299-de196ea013d6?w=300&h=200&fit=crop",
-    "Home Decor & Festive Needs": "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=300&h=200&fit=crop",
-    "Home Furnishing": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=300&h=200&fit=crop",
-    "Kitchen & Dining": "https://images.unsplash.com/photo-1556911220-bff31c812dba?w=300&h=200&fit=crop",
-    "Watches": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=200&fit=crop"
-}
-
 # Images pour les features (Unsplash - professionnelles)
 FEATURE_IMAGES = {
-    "image_classification": "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=300&h=200&fit=crop&auto=format",
     "text_classification": "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=300&h=200&fit=crop&auto=format",
     "analytics": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=200&fit=crop&auto=format",
     "batch_processing": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=300&h=200&fit=crop&auto=format"
 }
 
-# Performances des modèles (à ajuster selon vos résultats réels)
+# Performances des modèles
 MODEL_PERFORMANCE = {
     "text": {
         "name": "TF-IDF + SVM",
         "accuracy": 0.9557,
         "f1_score": 0.9549
-    },
-    "image": {
-        "name": "VGG16",
-        "accuracy": 0.7848,
-        "f1_score": 0.7862
     }
 }
 
@@ -805,20 +786,19 @@ def apply_custom_css():
 # =============================================================================
 
 def render_navigation():
-    """Barre de navigation avec bouton de thème icône seulement"""
+    """Barre de navigation simplifiée pour classification texte uniquement"""
     
-    # Créer 5 colonnes
-    col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 0.2])  
+    # Créer 4 colonnes pour 3 pages + thème
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 0.2])  
     
-    # Liste des pages
+    # Liste des pages (sans image classification)
     pages = [
         {"key": "home", "label": "HOME", "image": "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=70&h=70&fit=crop", "col": col1},
-        {"key": "image", "label": "IMAGE CLASSIFICATION", "image": "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=70&h=70&fit=crop", "col": col2},
-        {"key": "text", "label": "TEXT CLASSIFICATION", "image": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=70&h=70&fit=crop", "col": col3},
-        {"key": "dashboard", "label": "DASHBOARD", "image": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=70&h=70&fit=crop", "col": col4}
+        {"key": "text", "label": "TEXT CLASSIFICATION", "image": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=70&h=70&fit=crop", "col": col2},
+        {"key": "dashboard", "label": "DASHBOARD", "image": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=70&h=70&fit=crop", "col": col3}
     ]
     
-    # Afficher les 4 boutons de navigation
+    # Afficher les 3 boutons de navigation
     for page in pages:
         with page["col"]:
             # Image
@@ -833,8 +813,8 @@ def render_navigation():
                 st.session_state.current_page = page['key']
                 st.rerun()
     
-    # 5ème colonne : Bouton de thème (icône seulement)
-    with col5:
+    # 4ème colonne : Bouton de thème (icône seulement)
+    with col4:
         theme_icon = "🌙" if st.session_state.theme == 'light' else "☀️"
         
         # CSS pour un bouton icône rond et discret
@@ -867,7 +847,7 @@ def render_navigation():
         }}
         
         /* Ajuster l'espacement */
-        div[data-testid="column"]:nth-child(5) {{
+        div[data-testid="column"]:nth-child(4) {{
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
@@ -894,21 +874,6 @@ def render_navigation():
 # =============================================================================
 # UTILITAIRES API
 # =============================================================================
-
-def call_image_api(image_file):
-    """Appeler API pour classification image"""
-    try:
-        files = {"file": image_file}
-        response = requests.post(f"{API_URL}/predict/image", files=files, timeout=30)
-        response.raise_for_status()
-        result = response.json()
-        # Ajouter le type de prédiction
-        if result and 'success' in result:
-            result['prediction_type'] = 'image'
-        return result
-    except requests.exceptions.RequestException as e:
-        st.error(f"❌ API Error: {str(e)}")
-        return None
 
 def call_text_api(text):
     """Appeler API pour classification texte avec gestion d'erreurs améliorée"""
@@ -965,56 +930,6 @@ def get_api_metrics():
 # =============================================================================
 # FONCTIONS DE TRAITEMENT PAR LOT
 # =============================================================================
-
-def process_batch_images(image_files):
-    """Traiter plusieurs images en lot"""
-    results = []
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-    
-    for i, image_file in enumerate(image_files):
-        try:
-            # Mettre à jour la progression
-            progress_bar.progress((i + 1) / len(image_files))
-            status_text.text(f"Processing image {i+1}/{len(image_files)}: {image_file.name[:30]}...")
-            
-            # Appeler l'API pour chaque image
-            image_file.seek(0)
-            result = call_image_api(image_file)
-            
-            if result and result.get('success'):
-                # Ajouter à l'historique
-                st.session_state.prediction_history.append({
-                    'category': result['category'],
-                    'confidence': result['confidence'],
-                    'timestamp': datetime.now(),
-                    'type': 'image',
-                    'filename': image_file.name
-                })
-                
-                results.append({
-                    'filename': image_file.name,
-                    'category': result['category'],
-                    'confidence': result['confidence'],
-                    'success': True
-                })
-            else:
-                results.append({
-                    'filename': image_file.name,
-                    'error': 'Classification failed',
-                    'success': False
-                })
-                
-        except Exception as e:
-            results.append({
-                'filename': image_file.name,
-                'error': str(e),
-                'success': False
-            })
-    
-    progress_bar.empty()
-    status_text.empty()
-    return results
 
 def process_batch_texts(texts):
     """Traiter plusieurs textes en lot"""
@@ -1144,7 +1059,7 @@ def create_probability_chart(probabilities):
     return fig
 
 def display_single_result(result):
-    """Afficher résultat de prédiction pour une seule image/texte"""
+    """Afficher résultat de prédiction pour un seul texte"""
     if result and result.get('success'):
         st.markdown(f"""
             <div class="result-box">
@@ -1169,20 +1084,18 @@ def display_single_result(result):
             'category': result['category'],
             'confidence': result['confidence'],
             'timestamp': datetime.now(),
-            'type': result.get('prediction_type', 'unknown')
+            'type': 'text'
         }
         
         # Ajouter des informations supplémentaires selon le type
-        if result.get('prediction_type') == 'image' and hasattr(st.session_state, 'last_uploaded_file'):
-            prediction_data['filename'] = st.session_state.last_uploaded_file.name
-        elif result.get('prediction_type') == 'text' and hasattr(st.session_state, 'last_text_input'):
+        if hasattr(st.session_state, 'last_text_input'):
             text = st.session_state.last_text_input
             prediction_data['text_preview'] = text[:50] + "..." if len(text) > 50 else text
         
         st.session_state.prediction_history.append(prediction_data)
         st.session_state.last_prediction = result
 
-def display_batch_results(results, result_type="image"):
+def display_batch_results(results):
     """Afficher les résultats du traitement par lot"""
     
     if not results:
@@ -1207,77 +1120,42 @@ def display_batch_results(results, result_type="image"):
     
     for result in results:
         if result.get('success', False):
-            if result_type == "image":
-                st.markdown(f"""
-                <div class="batch-result-card batch-success">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong>{result['filename']}</strong>
-                            <div style="margin-top: 5px;">
-                                <span style="background: #10B98120; color: #065F46; padding: 2px 8px; border-radius: 12px; font-size: 0.9rem;">
-                                    {result['category']}
-                                </span>
-                                <span style="margin-left: 10px; color: #6B7280;">
-                                    Confidence: {result['confidence']*100:.1f}%
-                                </span>
-                            </div>
+            st.markdown(f"""
+            <div class="batch-result-card batch-success">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="color: #6B7280; font-size: 0.9rem; margin-bottom: 5px;">
+                            "{result['text_preview']}"
                         </div>
-                        <div style="color: #10B981; font-weight: bold;">✓</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown(f"""
-                <div class="batch-result-card batch-success">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <div style="color: #6B7280; font-size: 0.9rem; margin-bottom: 5px;">
-                                "{result['text_preview']}"
-                            </div>
-                            <div>
-                                <span style="background: #10B98120; color: #065F46; padding: 2px 8px; border-radius: 12px; font-size: 0.9rem;">
-                                    {result['category']}
-                                </span>
-                                <span style="margin-left: 10px; color: #6B7280;">
-                                    Confidence: {result['confidence']*100:.1f}%
-                                </span>
-                            </div>
+                            <span style="background: #10B98120; color: #065F46; padding: 2px 8px; border-radius: 12px; font-size: 0.9rem;">
+                                {result['category']}
+                            </span>
+                            <span style="margin-left: 10px; color: #6B7280;">
+                                Confidence: {result['confidence']*100:.1f}%
+                            </span>
                         </div>
-                        <div style="color: #10B981; font-weight: bold;">✓</div>
                     </div>
+                    <div style="color: #10B981; font-weight: bold;">✓</div>
                 </div>
-                """, unsafe_allow_html=True)
+            </div>
+            """, unsafe_allow_html=True)
         else:
-            if result_type == "image":
-                st.markdown(f"""
-                <div class="batch-result-card batch-error">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong>{result['filename']}</strong>
-                            <div style="margin-top: 5px; color: #DC2626;">
-                                Error: {result.get('error', 'Unknown error')}
-                            </div>
+            st.markdown(f"""
+            <div class="batch-result-card batch-error">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="color: #6B7280; font-size: 0.9rem; margin-bottom: 5px;">
+                            "{result.get('text_preview', 'N/A')}"
                         </div>
-                        <div style="color: #DC2626; font-weight: bold;">✗</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown(f"""
-                <div class="batch-result-card batch-error">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="color: #6B7280; font-size: 0.9rem; margin-bottom: 5px;">
-                                "{result.get('text_preview', 'N/A')}"
-                            </div>
-                            <div style="color: #DC2626;">
-                                Error: {result.get('error', 'Unknown error')}
-                            </div>
+                        <div style="color: #DC2626;">
+                            Error: {result.get('error', 'Unknown error')}
                         </div>
-                        <div style="color: #DC2626; font-weight: bold;">✗</div>
                     </div>
+                    <div style="color: #DC2626; font-weight: bold;">✗</div>
                 </div>
-                """, unsafe_allow_html=True)
+            </div>
+            """, unsafe_allow_html=True)
     
     st.success(f"✅ All results have been saved to the dashboard history. Go to Dashboard page to view detailed analytics.")
 
@@ -1300,10 +1178,10 @@ def page_home():
                         <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=100&h=100&fit=crop&crop=center" 
                              style="width: 80px; height: 80px; border-radius: 16px; border: 3px solid white; 
                                     margin-bottom: 15px;">
-                        <h1 style="color: white; margin: 0; font-size: 2.8rem;">Product Classification System</h1>
+                        <h1 style="color: white; margin: 0; font-size: 2.8rem;">Text Product Classifier</h1>
                     </div>
                     <p style="font-size: 1.4rem; max-width: 800px; margin: 0 auto; line-height: 1.6;">
-                        Advanced AI-powered product categorization for e-commerce platforms
+                        Advanced AI-powered text classification for e-commerce product descriptions
                     </p>
                 </div>
             </div>
@@ -1313,20 +1191,9 @@ def page_home():
     # Features
     st.markdown("<h2 style='text-align: center; color: #1E3A8A; margin: 3rem 0 2rem 0;'>Key Features</h2>", unsafe_allow_html=True)
     
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.markdown(f"""
-            <div class="feature-card">
-                <img src="{FEATURE_IMAGES['image_classification']}" class="feature-image" alt="Image Classification">
-                <div class="feature-content">
-                    <div class="feature-title">Image classification</div>
-                    <div class="feature-desc">Upload product images for instant AI-powered categorization with high accuracy </div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
         st.markdown(f"""
             <div class="feature-card">
                 <img src="{FEATURE_IMAGES['text_classification']}" class="feature-image" alt="Text Classification">
@@ -1337,7 +1204,7 @@ def page_home():
             </div>
         """, unsafe_allow_html=True)
     
-    with col3:
+    with col2:
         st.markdown(f"""
             <div class="feature-card">
                 <img src="{FEATURE_IMAGES['analytics']}" class="feature-image" alt="Analytics">
@@ -1348,13 +1215,13 @@ def page_home():
             </div>
         """, unsafe_allow_html=True)
     
-    with col4:
+    with col3:
         st.markdown(f"""
             <div class="feature-card">
                 <img src="{FEATURE_IMAGES['batch_processing']}" class="feature-image" alt="Batch Processing">
                 <div class="feature-content">
                     <div class="feature-title">Batch Processing</div>
-                    <div class="feature-desc">For your classification tasks, process multiple images or texts simultaneously for efficient bulk classification.</div>
+                    <div class="feature-desc">Process multiple product descriptions simultaneously for efficient bulk classification.</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -1362,9 +1229,10 @@ def page_home():
     # Model Performance
     st.markdown("<h2 style='text-align: center; color: #1E3A8A; margin: 3rem 0 2rem 0;'>Model Performance</h2>", unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2)
+    # Centrer le modèle de performance
+    col1, col2, col3 = st.columns([1, 2, 1])
     
-    with col1:
+    with col2:
         text_model = MODEL_PERFORMANCE['text']
         st.markdown(f"""
             <div class="model-card">
@@ -1387,36 +1255,24 @@ def page_home():
             </div>
         """, unsafe_allow_html=True)
     
-    with col2:
-        image_model = MODEL_PERFORMANCE['image']
-        st.markdown(f"""
-            <div class="model-card">
-                <div class="model-header">
-                    <div class="model-title">Image Classification Model</div>
-                    <div class="model-name">{image_model['name']}</div>
-                </div>
-                <div class="model-content">
-                    <div class="model-metrics">
-                        <div class="model-metric">
-                            <div class="model-metric-value">{image_model['accuracy']*100:.2f}%</div>
-                            <div class="model-metric-label">Accuracy</div>
-                        </div>
-                        <div class="model-metric">
-                            <div class="model-metric-value">{image_model['f1_score']*100:.2f}%</div>
-                            <div class="model-metric-label">F1-Score</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-    
     # Categories
     st.markdown("<h2 style='text-align: center; color: #1E3A8A; margin: 3rem 0 2rem 0;'>Product Categories</h2>", unsafe_allow_html=True)
+    
+    # Images représentatives pour les catégories
+    category_images = {
+        "Baby Care": "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&h=200&fit=crop",
+        "Beauty and Personal Care": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=300&h=200&fit=crop",
+        "Computers": "https://images.unsplash.com/photo-1547082299-de196ea013d6?w=300&h=200&fit=crop",
+        "Home Decor & Festive Needs": "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=300&h=200&fit=crop",
+        "Home Furnishing": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=300&h=200&fit=crop",
+        "Kitchen & Dining": "https://images.unsplash.com/photo-1556911220-bff31c812dba?w=300&h=200&fit=crop",
+        "Watches": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=200&fit=crop"
+    }
     
     cols = st.columns(4)
     for idx, category in enumerate(CATEGORIES):
         with cols[idx % 4]:
-            img_url = CATEGORY_IMAGES.get(category, "")
+            img_url = category_images.get(category, "")
             st.markdown(f"""
                 <div class="category-card">
                     <img src="{img_url}" class="category-image" alt="{category}" onerror="this.style.display='none'">
@@ -1431,19 +1287,18 @@ def page_home():
         <div class="card">
             <p style='font-size: 1.1rem; line-height: 1.8; color: #475569; text-align: justify;'>
             This enterprise-grade application leverages state-of-the-art machine learning models to automatically 
-            classify e-commerce products into seven distinct categories. The system employs two specialized 
-            classification pipelines: a computer vision model (VGG16) for image-based classification, 
-            and a natural language processing model (TF-IDF + SVM) for text-based classification.
+            classify e-commerce products into seven distinct categories based on their textual descriptions. 
+            The system employs a specialized classification pipeline using TF-IDF vectorization and 
+            Support Vector Machines (SVM) for text-based classification.
             </p>
             <p style='font-size: 1.1rem; line-height: 1.8; color: #475569; text-align: justify; margin-top: 1.5rem;'>
-            Built with cutting-edge technologies including TensorFlow, scikit-learn, FastAPI, and Streamlit, 
+            Built with cutting-edge technologies including scikit-learn, FastAPI, and Streamlit, 
             this solution provides real-time classification with professional-grade accuracy. The modular 
             architecture ensures scalability and easy integration into existing e-commerce platforms.
             </p>
             <div style='margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); border-radius: 12px; border-left: 4px solid #1E3A8A;'>
                 <h3 style='color: #1E3A8A; margin-bottom: 1rem;'>Technologies used</h3>
                 <ul style='color: #475569; font-size: 1rem; line-height: 1.8;'>
-                    <li><strong>Deep Learning:</strong> TensorFlow, VGG16</li>
                     <li><strong>NLP:</strong> TF-IDF, Support Vector Machines</li>
                     <li><strong>Backend:</strong> FastAPI, Python 3.12</li>
                     <li><strong>Frontend:</strong> Streamlit with custom CSS</li>
@@ -1453,86 +1308,6 @@ def page_home():
             </div>
         </div>
     """, unsafe_allow_html=True)
-
-def page_image():
-    """Page classification par image avec traitement par lot"""
-    
-    st.markdown("<div class='card-header'>Image classification</div>", unsafe_allow_html=True)
-    
-    # Onglets pour single vs batch
-    tab1, tab2 = st.tabs(["Single image", "Batch processing"])
-    
-    with tab1:
-        st.markdown("### Upload Single Image")
-        uploaded_file = st.file_uploader(
-            "Choose an image file",
-            type=["jpg", "jpeg", "png"],
-            help="Supported formats: JPG, JPEG, PNG",
-            key="single_image"
-        )
-        
-        if uploaded_file:
-            col1, col2 = st.columns([1, 1])
-            
-            with col1:
-                image = Image.open(uploaded_file)
-                st.image(image, caption="Uploaded Image", width=400)
-            
-            with col2:
-                st.markdown("<br>" * 3, unsafe_allow_html=True)
-                if st.button("🔍 Classify Product", key="classify_img_single", use_container_width=True):
-                    with st.spinner("Analyzing image..."):
-                        # Stocker le fichier pour l'historique
-                        if 'last_uploaded_file' not in st.session_state:
-                            st.session_state.last_uploaded_file = uploaded_file
-                        else:
-                            st.session_state.last_uploaded_file = uploaded_file
-                            
-                        uploaded_file.seek(0)
-                        result = call_image_api(uploaded_file)
-                        if result:
-                            display_single_result(result)
-    
-    with tab2:
-        st.markdown("### Batch image processing")
-        st.markdown("Upload multiple images for bulk classification.")
-        
-        uploaded_files = st.file_uploader(
-            "Choose multiple image files",
-            type=["jpg", "jpeg", "png"],
-            accept_multiple_files=True,
-            help="Select multiple images for batch processing",
-            key="batch_images"
-        )
-        
-        if uploaded_files:
-            # Statistiques
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Images Selected", len(uploaded_files))
-            with col2:
-                total_size = sum(f.size for f in uploaded_files) / (1024*1024)
-                st.metric("Total Size", f"{total_size:.2f} MB")
-            with col3:
-                st.metric("Status", "Ready")
-            
-            # Aperçu des images (limitée à 6 images)
-            st.markdown("####  Image Preview")
-            if len(uploaded_files) > 0:
-                cols = st.columns(min(3, len(uploaded_files)))
-                for idx, file in enumerate(uploaded_files[:6]):  # Limiter à 6 images
-                    with cols[idx % len(cols)]:
-                        img = Image.open(file)
-                        st.image(img, caption=file.name[:20] + "..." if len(file.name) > 20 else file.name, width=150)
-                
-                if len(uploaded_files) > 6:
-                    st.info(f" ... and {len(uploaded_files) - 6} more images")
-            
-            # Bouton de traitement
-            if st.button(" Process All Images", key="process_batch_images", use_container_width=True):
-                with st.spinner(f"Processing {len(uploaded_files)} images..."):
-                    results = process_batch_images(uploaded_files)
-                    display_batch_results(results, "image")
 
 def page_text():
     """Page classification par texte avec traitement par lot"""
@@ -1544,6 +1319,22 @@ def page_text():
     
     with tab1:
         st.markdown("### Single Text Classification")
+        
+        # Section avec exemples de produits
+        with st.expander("💡 Examples of good product descriptions", expanded=False):
+            examples = {
+                "Baby Care": "Soft organic cotton baby onesie with snap closures, perfect for newborns 0-3 months",
+                "Computers": "Gaming laptop with RTX 4070, 16GB RAM, 1TB SSD, 15.6 inch 144Hz display",
+                "Kitchen & Dining": "Stainless steel chef's knife with ergonomic handle, perfect for professional kitchens",
+                "Watches": "Men's stainless steel chronograph watch with automatic movement and sapphire crystal glass",
+                "Beauty and Personal Care": "Hydrating facial serum with vitamin C and hyaluronic acid for brightening skin",
+                "Home Decor & Festive Needs": "Elegant string lights with 200 warm white LED bulbs for indoor decoration",
+                "Home Furnishing": "Modern sectional sofa in dark gray fabric with reversible chaise and reclining seats"
+            }
+            
+            for category, example in examples.items():
+                st.markdown(f"**{category}:** `{example}`")
+        
         text_input = st.text_area(
             "Enter product description",
             height=200,
@@ -1554,7 +1345,7 @@ def page_text():
         
         if st.button(" Classify Product", key="classify_txt_single", use_container_width=True):
             if text_input.strip():
-                with st.spinner("Analyzing text..."):
+                with st.spinner("Analyzing text with TF-IDF + SVM..."):
                     # Stocker le texte pour l'historique
                     if 'last_text_input' not in st.session_state:
                         st.session_state.last_text_input = text_input
@@ -1564,6 +1355,8 @@ def page_text():
                     result = call_text_api(text_input)
                     if result:
                         display_single_result(result)
+                    else:
+                        st.error("Failed to get prediction from API")
             else:
                 st.warning("⚠️ Please enter a product description")
     
@@ -1594,7 +1387,7 @@ def page_text():
                     if st.button(" Process CSV Descriptions", key="process_csv", use_container_width=True):
                         with st.spinner(f"Processing {len(text_inputs)} descriptions..."):
                             results = process_batch_texts(text_inputs)
-                            display_batch_results(results, "text")
+                            display_batch_results(results)
                 else:
                     st.error("❌ CSV file must contain a column named 'description'")
             except Exception as e:
@@ -1625,7 +1418,7 @@ def page_text():
             if st.button(" Process All Descriptions", key="process_manual", use_container_width=True):
                 with st.spinner(f"Processing {len(text_inputs)} descriptions..."):
                     results = process_batch_texts(text_inputs)
-                    display_batch_results(results, "text")
+                    display_batch_results(results)
 
 def page_dashboard():
     """Page dashboard avec métriques avancées et historique complet"""
@@ -1642,32 +1435,23 @@ def page_dashboard():
     if st.session_state.prediction_history:
         df_history = pd.DataFrame(st.session_state.prediction_history)
         
-        # Calculer la confiance moyenne par type
-        image_history = df_history[df_history['type'] == 'image']
-        text_history = df_history[df_history['type'] == 'text']
-        
-        avg_confidence_image = image_history['confidence'].mean() if len(image_history) > 0 else 0
-        avg_confidence_text = text_history['confidence'].mean() if len(text_history) > 0 else 0
+        # Calculer la confiance moyenne
+        avg_confidence_text = df_history['confidence'].mean() if len(df_history) > 0 else 0
         
         # Distribution par catégorie
         category_counts = df_history['category'].value_counts().to_dict()
         avg_confidence_by_cat = df_history.groupby('category')['confidence'].mean().to_dict()
         
-        # Statistiques par type
-        image_count = len(image_history)
-        text_count = len(text_history)
+        # Statistiques
         total_count = len(df_history)
     else:
-        avg_confidence_image = 0
         avg_confidence_text = 0
         category_counts = {}
         avg_confidence_by_cat = {}
-        image_count = 0
-        text_count = 0
         total_count = 0
     
     # Row 1: Métriques principales
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown(f"""
@@ -1675,7 +1459,7 @@ def page_dashboard():
                 <div class="metric-value">{total_count}</div>
                 <div class="metric-label">Total Predictions</div>
                 <div style="margin-top: 0.5rem; font-size: 0.9rem; color: #64748B;">
-                    Images: {image_count} | Texts: {text_count}
+                    All text classifications
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -1687,31 +1471,18 @@ def page_dashboard():
                 <div class="metric-value" style="color: #10B981;">{accuracy_text:.1f}%</div>
                 <div class="metric-label">Text Model Accuracy</div>
                 <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748B;">
-                    F1: {MODEL_PERFORMANCE['text']['f1_score']:.3f}
+                    F1-Score: {MODEL_PERFORMANCE['text']['f1_score']:.3f}
                 </div>
             </div>
         """, unsafe_allow_html=True)
     
     with col3:
-        accuracy_image = MODEL_PERFORMANCE['image']['accuracy'] * 100
         st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-value" style="color: #10B981;">{accuracy_image:.1f}%</div>
-                <div class="metric-label">Image Model Accuracy</div>
-                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748B;">
-                    F1: {MODEL_PERFORMANCE['image']['f1_score']:.3f}
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with col4:
-        avg_confidence_session = (avg_confidence_image + avg_confidence_text) / 2 if (image_count + text_count) > 0 else 0
-        st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value" style="color: #D4AF37;">{avg_confidence_session*100:.1f}%</div>
+                <div class="metric-value" style="color: #D4AF37;">{avg_confidence_text*100:.1f}%</div>
                 <div class="metric-label">Avg. Confidence</div>
                 <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748B;">
-                    Image: {avg_confidence_image*100:.1f}% | Text: {avg_confidence_text*100:.1f}%
+                    Based on {total_count} predictions
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -1732,7 +1503,7 @@ def page_dashboard():
                             {last_result['category']}
                         </div>
                         <div style="color: #64748B; margin-bottom: 1rem;">
-                            Type: {last_result.get('prediction_type', 'Unknown').title()}
+                            Type: Text Classification
                         </div>
                         <div style="font-size: 1.8rem; font-weight: 700; color: #1E3A8A;">
                             {last_result['confidence']*100:.1f}%
@@ -1780,44 +1551,49 @@ def page_dashboard():
         col1, col2 = st.columns(2)
         
         with col1:
-            # Distribution par type
-            type_counts = df_history['type'].value_counts()
-            fig = px.pie(
-                values=type_counts.values,
-                names=type_counts.index,
-                title="Predictions by Type",
-                color_discrete_sequence=['#1E3A8A', '#D4AF37'],
-                hole=0.4
-            )
-            fig.update_layout(
-                height=400,
-                showlegend=True,
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)'
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        
-        with col2:
             # Top catégories par nombre de prédictions
             if category_counts:
-                top_categories = pd.Series(category_counts).sort_values(ascending=False).head(5)
+                top_categories = pd.Series(category_counts).sort_values(ascending=False).head(7)
+                fig = px.pie(
+                    values=top_categories.values,
+                    names=top_categories.index,
+                    title="Category Distribution",
+                    color_discrete_sequence=px.colors.sequential.Blues_r
+                )
+                fig.update_layout(
+                    height=400,
+                    showlegend=True,
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)'
+                )
+                st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            # Confiance moyenne par catégorie
+            if avg_confidence_by_cat:
+                avg_conf_df = pd.DataFrame(list(avg_confidence_by_cat.items()), 
+                                          columns=['Category', 'Avg Confidence'])
+                avg_conf_df = avg_conf_df.sort_values('Avg Confidence', ascending=True)
+                
                 fig = go.Figure(data=[
                     go.Bar(
-                        x=top_categories.values,
-                        y=top_categories.index,
+                        x=avg_conf_df['Avg Confidence'],
+                        y=avg_conf_df['Category'],
                         orientation='h',
-                        marker_color=['#1E3A8A', '#2563EB', '#3B82F6', '#60A5FA', '#93C5FD'],
-                        text=top_categories.values,
+                        marker_color=avg_conf_df['Avg Confidence'],
+                        colorscale='Blues',
+                        text=avg_conf_df['Avg Confidence'].apply(lambda x: f'{x*100:.1f}%'),
                         textposition='outside'
                     )
                 ])
                 fig.update_layout(
-                    title='Top 5 Categories',
+                    title='Average Confidence by Category',
                     height=400,
                     plot_bgcolor='rgba(0,0,0,0)',
                     paper_bgcolor='rgba(0,0,0,0)',
                     xaxis=dict(
-                        title='Number of Predictions',
+                        title='Average Confidence',
+                        range=[0, 1],
                         gridcolor='#E2E8F0'
                     ),
                     yaxis=dict(
@@ -1838,9 +1614,7 @@ def page_dashboard():
         df_display['type'] = df_display['type'].apply(lambda x: x.capitalize())
         
         # Ajouter des informations supplémentaires
-        if 'filename' in df_display.columns:
-            df_display['input'] = df_display['filename']
-        elif 'text_preview' in df_display.columns:
+        if 'text_preview' in df_display.columns:
             df_display['input'] = df_display['text_preview'].apply(lambda x: f'"{x}"')
         else:
             df_display['input'] = 'N/A'
@@ -1850,13 +1624,12 @@ def page_dashboard():
         
         # Afficher le tableau stylisé
         st.dataframe(
-            df_display[['timestamp', 'type', 'input', 'category', 'confidence']],
+            df_display[['timestamp', 'input', 'category', 'confidence']],
             use_container_width=True,
             hide_index=True,
             column_config={
                 'timestamp': st.column_config.TextColumn('Timestamp', width='medium'),
-                'type': st.column_config.TextColumn('Type', width='small'),
-                'input': st.column_config.TextColumn('Input', width='large'),
+                'input': st.column_config.TextColumn('Product Description', width='large'),
                 'category': st.column_config.TextColumn('Category', width='medium'),
                 'confidence': st.column_config.TextColumn('Confidence', width='small')
             }
@@ -1891,19 +1664,14 @@ def page_dashboard():
                 <div style="font-size: 4rem; color: #CBD5E1; margin-bottom: 1rem;">📊</div>
                 <h3 style="color: #64748B; margin-bottom: 1rem;">No Prediction History Yet</h3>
                 <p style="color: #94A3B8; max-width: 600px; margin: 0 auto;">
-                    Start classifying products using the Image or Text classification pages to see analytics here.
+                    Start classifying products using the Text Classification page to see analytics here.
                 </p>
                 <div style="margin-top: 2rem;">
-                    <a href="#" onclick="window.parent.postMessage({{'type': 'navigation', 'page': 'image'}}, '*')" 
+                    <button onclick="window.parent.postMessage({{'type': 'navigation', 'page': 'text'}}, '*')" 
                        style="background: #1E3A8A; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; 
-                              text-decoration: none; font-weight: 600; display: inline-block; margin: 0 0.5rem;">
-                        Classify Images
-                    </a>
-                    <a href="#" onclick="window.parent.postMessage({{'type': 'navigation', 'page': 'text'}}, '*')" 
-                       style="background: #D4AF37; color: #1E3A8A; padding: 0.75rem 1.5rem; border-radius: 8px; 
-                              text-decoration: none; font-weight: 600; display: inline-block; margin: 0 0.5rem;">
-                        Classify Texts
-                    </a>
+                              text-decoration: none; font-weight: 600; display: inline-block; margin: 0 0.5rem; border: none; cursor: pointer;">
+                        Classify Text
+                    </button>
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -1918,16 +1686,16 @@ def render_footer():
                 <div class="footer-logo">
                     <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=30&h=30&fit=crop&crop=center" 
                          style="width: 30px; height: 30px; border-radius: 8px; border: 2px solid #1E3A8A;">
-                    Product Classifier Pro
+                    Text Product Classifier Pro
                 </div>
                 <p class="footer-text">
-                    Advanced AI-powered product classification system for e-commerce platforms.<br>
-                    Leveraging state-of-the-art machine learning models for accurate product categorization.
+                    Advanced AI-powered text classification system for e-commerce platforms.<br>
+                    Leveraging state-of-the-art NLP models for accurate product categorization.
                 </p>
                 <div class="footer-divider"></div>
                 <div class="footer-copyright">
-                    © {current_year} Product Classification System. All rights reserved.<br>
-                    Powered by Advanced Machine Learning & Deep Learning Models
+                    © {current_year} Text Product Classification System. All rights reserved.<br>
+                    Powered by TF-IDF & Support Vector Machines
                 </div>
             </div>
         </div>
@@ -1949,8 +1717,6 @@ def main():
     # Router vers la page appropriée
     if st.session_state.current_page == 'home':
         page_home()
-    elif st.session_state.current_page == 'image':
-        page_image()
     elif st.session_state.current_page == 'text':
         page_text()
     elif st.session_state.current_page == 'dashboard':
