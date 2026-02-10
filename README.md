@@ -118,11 +118,13 @@ Product-Classification/
 │
 ├── 📂 api/                           # API FastAPI
 │   ├── main.py                       # Point d'entrée de l'API
+│   ├── main_render.py          # Point d'entrée de l'API pour la modélisation textuelle uniquement
 │   ├── requirements.txt                     
 │   └── Dockerfile                    # Configuration
 │
 ├── 📂 app/                           # Application Streamlit
-│   └── streamlit_app.py              # Interface web
+│    ├── streamlit_app.py      # Interface web y compris la modélisation à partir du texte et image
+│    └── streamlit_app_test.py           # Interface web avec la modélisation textuelle uniquement 
 │
 ├── 📂 Data/                           # Données de l'étude
 │   └── Flipkart/ 
