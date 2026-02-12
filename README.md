@@ -31,8 +31,8 @@
 
 Ce projet implémente un système complet de classification de produits e-commerce capable de prédire automatiquement la catégorie d'un produit à partir de :
 
-- **📝 Texte** : Description du produit
-- **🖼️ Image** : Photo du produit  
+- **Texte** : Description du produit
+- **Image** : Photo du produit  
 
 Le système utilise des techniques avancées de machine learning et deep learning pour offrir des prédictions précises et rapides, idéales pour des applications e-commerce en production.
 
@@ -40,15 +40,15 @@ Le système utilise des techniques avancées de machine learning et deep learnin
 
 Le système classifie les produits dans **7 catégories** principales :
 
-| Icône | Catégorie | Description |
-|-------|-----------|-------------|
-| 👶 | **Baby Care** | Produits de soins pour bébés |
-| 💄 | **Beauty and Personal Care** | Produits de beauté et soins personnels |
-| 💻 | **Computers** | Ordinateurs et accessoires informatiques |
-| 🎨 | **Home Decor & Festive Needs** | Décoration et articles festifs |
-| 🛋️ | **Home Furnishing** | Mobilier et ameublement |
-| 🍳 | **Kitchen & Dining** | Articles de cuisine et salle à manger |
-| ⌚ | **Watches** | Montres et accessoires horlogers |
+| Catégorie | Description |
+|-----------|-------------|
+| **Baby Care** | Produits de soins pour bébés |
+| **Beauty and Personal Care** | Produits de beauté et soins personnels |
+| **Computers** | Ordinateurs et accessoires informatiques |
+| **Home Decor & Festive Needs** | Décoration et articles festifs |
+| **Home Furnishing** | Mobilier et ameublement |
+| **Kitchen & Dining** | Articles de cuisine et salle à manger |
+| **Watches** | Montres et accessoires horlogers |
 
 ## Fonctionnalités
 
@@ -59,7 +59,7 @@ Le système classifie les produits dans **7 catégories** principales :
 - ✅ Scores de confiance pour chaque prédiction
 - ✅ Probabilités détaillées par catégorie
 
-### 🖥️ Interface utilisateur (Streamlit)
+### Interface utilisateur (Streamlit)
 
 - ✅ Interface moderne et intuitive
 - ✅ Upload d'images avec prévisualisation
