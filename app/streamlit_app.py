@@ -1175,7 +1175,7 @@ def display_batch_results(results, result_type="image"):
         st.metric("Success Rate", f"{success_rate:.1f}%")
     
     # Afficher les résultats détaillés
-    st.markdown("### 📋 Batch Results Summary")
+    st.markdown("###  Batch Results Summary")
     
     for result in results:
         if result.get('success', False):
@@ -1690,7 +1690,7 @@ def page_dashboard():
     
     # Section 2: Dernière prédiction
     if st.session_state.last_prediction:
-        st.markdown("<h3 style='color: #1E3A8A; margin: 3rem 0 1.5rem 0;'>🔄 Last Prediction</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color: #1E3A8A; margin: 3rem 0 1.5rem 0;'> Last Prediction</h3>", unsafe_allow_html=True)
         
         last_result = st.session_state.last_prediction
         if last_result.get('success'):
