@@ -1452,7 +1452,7 @@ def page_image():
             
             with col2:
                 st.markdown("<br>" * 3, unsafe_allow_html=True)
-                if st.button("🔍 Classify Product", key="classify_img_single", use_container_width=True):
+                if st.button("Classify Product", key="classify_img_single", use_container_width=True):
                     with st.spinner("Analyzing image..."):
                         # Stocker le fichier pour l'historique
                         if 'last_uploaded_file' not in st.session_state:
